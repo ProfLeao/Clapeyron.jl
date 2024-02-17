@@ -59,10 +59,34 @@ md"Plotting:"
 
 # ╔═╡ 8a5312a6-a829-4e1c-84d2-a4fb05087ae9
 begin
-	plot(1 .-y[1], p[1]./1e6, label="Wilson{SRK}", linestyle=:dot, linewidth=3)
-	plot!(1 .-y[2], p[2]./1e6, label="NRTL{PR}", linestyle=:dash, linewidth=3)
-	plot!(1 .-y[3], p[3]./1e6, label="UNIFAC{PC-SAFT}",linestyle=:dashdot, linewidth=3)
-	plot!(1 .-y[4],p[4]./1e6,label="COSMO-SAC-dsp{SAFT-γ Mie}",linestyle=:dashdotdot, linewidth=3)
+	plot(
+		1 .-y[1], 
+		p[1]./1e6, 
+		label="Wilson{SRK}", 
+		linestyle=:dot, 
+		linewidth=3
+	)
+	plot!(
+		1 .-y[2], 
+		p[2]./1e6, 
+		label="NRTL{PR}", 
+		linestyle=:dash, 
+		linewidth=3
+	)
+	plot!(
+		1 .-y[3], 
+		p[3]./1e6, 
+		label="UNIFAC{PC-SAFT}",
+		linestyle=:dashdot, 
+		linewidth=3
+	)
+	plot!(
+		1 .-y[4],
+		p[4]./1e6,
+		label="COSMO-SAC-dsp{SAFT-γ Mie}",
+		linestyle=:dashdotdot, 
+		linewidth=3
+	)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
