@@ -211,7 +211,7 @@ begin
 		xguidefontsize = 16, 
 		yguidefontsize = 16
 	)
-	yscale!(:log)
+
 end
 
 # ╔═╡ d1c41e92-b422-4c49-ab37-fa92d4b9a1d0
