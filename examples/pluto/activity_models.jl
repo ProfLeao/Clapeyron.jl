@@ -160,7 +160,7 @@ Plotting:
 begin
 	plot(
 		1 .-y2[1], 
-		T1[1], 
+		T2[1], 
 		label="Wilson{PR}", 
 		linestyle=:dot, 
 		linewidth=3
@@ -173,36 +173,43 @@ begin
 		linewidth=3
 	)
 	plot!(
+		1 .-y2[3],
+		T2[3],
+		label="UNIQUAC{PR}", 
+		linestyle=:dashdot, 
+		linewidth=3
+	)
+	plot!(
 		1 .-y2[4],
 		T2[4],
 		label="PR{HVRule{Wilson}}",
-		linestyle=:dashdot, 
+		linestyle=:dashdotdot, 
 		linewidth=3
 	)
 	plot!(
 		1 .-y2[5],
 		T2[5],
 		label="PR{WSRule{NRTL}}",
-		linestyle=:dashdotdot, 
+		linestyle=:dot, 
 		linewidth=3, 
-		 
 	)
 	plot!(
 		1 .-y2[6],
 		T2[6],
-		label="PR{LCVMRule{UNIQUAC}}"
-		linestyle=:dashdotdot, 
+		label="PR{LCVMRule{UNIQUAC}}",
+		linestyle=:dash, 
 		linewidth=3, 
-		 
 	)
-	xlabel!("composition of 1", xguidefontsize = 16)
-	ylabel!("Temperature [K]", yguidefontsize = 16)
+	xlabel!("composition of 1")
+	ylabel!("Temperature [K]")
 	# Minor plot setup
 	plot!(
 		tickfontsize=12, 
 		legend_font_pointsize = 12,
-		legend_position = :bottomright,
-		framestyle = :box
+		legend_position = :topright,
+		framestyle = :box,
+		xguidefontsize = 16, 
+		yguidefontsize = 16
 	)
 end
 
