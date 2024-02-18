@@ -138,16 +138,15 @@ begin
 		xlims = [300,650],
 		ylims = [5e-3,3e1]
 	)
-	
-	# Create a legend of all the existing plots using their labels as names
-	#plt.legend(loc="lower right",frameon=false,fontsize=12) 
-	#plt.xlabel("Temperature / K",fontsize=16)
-	#plt.ylabel("Pressure / MPa",fontsize=16)
-	#plt.xticks(fontsize=12)
-	#plt.yticks(fontsize=12)
-	#plt.xlim([300,650])
-	#plt.ylim([5e-3,3e1])
 end
+
+# ╔═╡ 37a67e54-003d-488a-8497-ea280cd15c3a
+md"""
+As we can see above, the addition of volume translation hasn't affected the predicted saturation curve, but the modified $\alpha$-function has. Twu _et al._ fitted their function against experimental data; it isn't so surprising then that their predictions are the most accurate.
+"""
+
+# ╔═╡ 4fd41fd0-55fd-4532-b239-b8902893070c
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1603,5 +1602,7 @@ version = "1.4.1+1"
 # ╠═e6677a2e-ea0c-4458-b115-091774d84642
 # ╟─895c6a09-8818-4de6-94ea-21a4b7b46ea5
 # ╠═6470370a-51a3-416f-9bb5-7eb5436b62e4
+# ╟─37a67e54-003d-488a-8497-ea280cd15c3a
+# ╠═4fd41fd0-55fd-4532-b239-b8902893070c
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
