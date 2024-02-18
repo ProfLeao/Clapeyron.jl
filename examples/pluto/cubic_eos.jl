@@ -4,220 +4,150 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 929c118b-113b-4fd2-a998-fc54acf70318
+# ╔═╡ 6d1c9b51-c8d0-427b-ac8d-fc5576faf206
 using Plots, Clapeyron
 
-# ╔═╡ b9fb451e-cd38-11ee-2d44-e5029c31e244
-md"# Activity models"
+# ╔═╡ eeb2e4c8-ce97-11ee-3cee-15f4e3f6d5e8
+md"# Cubic equations of state"
 
-# ╔═╡ 5c1f7cf7-ad5c-4da1-8528-fe5fe93cd2b0
+# ╔═╡ 2de388f8-8b36-450a-9496-bd0be910b793
 md"""
-In this notebook, we will be giving examples on how to use activity models within `Clapeyron.jl`. We include examples of how one can customise their activity model and how it can be used in tangent with a cubic equation of state.
+In this notebook, we will be giving examples of how one can use cubic equations of state in `Clapeyron.jl`, along with the extremely easy ways one can customise these using:
+-  $\alpha$-functions: These are meant to improve the modelling of pure VLE properties although modifications such as Boston-Matthias can have a significant impact on multi-component VLE. 
+- Volume translation methods: Cubics generally don't predict very accurate liquid densities, particularly for hydrogen-bonding fluids. Volume translation improves the accuracy of this property without affecting the accuracy of VLE properties.
+- Mixing rules: To model multi-component systems, mixing rules are required to obtain the one-fluid-mixture parameters. These can vary greatly in terms of accuracy and, in some cases, may require an additional model.
 """
 
-# ╔═╡ 4b4e4880-b895-44b6-8bb3-1b5cf9a08b77
+# ╔═╡ b78c14dd-5123-432b-bac0-19fc412ec67b
 md"""
-## $p-xy$ diagram of water+ethanol
+We'll be giving an example of how to modify the $\alpha$-functions and volume-translation methods for a cubic model using the vapour-liquid equilibrium of water.
 
-Activity models cannot be used on their own; they provide us with an activity for a species in the mixture but, to obtain VLE properties from this, we need a saturation pressure. This can be obtained from any of the equations of state provided in Clapeyron.jl using the optional argument puremodel. We use the water + ethanol mixture as an example:
+As a first step, we need to generate the models:
 """
 
-# ╔═╡ ec86a5f3-1109-4749-9e1b-575509e0def7
+# ╔═╡ 12ff507f-73c6-4218-bb11-7b78964051c6
 begin
-	model1 = Wilson(["water","ethanol"];puremodel=SRK)
-	model2 = NRTL(["water","ethanol"];puremodel=PR)
-	model3 = UNIFAC(["water","ethanol"];puremodel=PCSAFT)
-	model4 = COSMOSACdsp(["water","ethanol"];puremodel=SAFTgammaMie)
-	
-	models1 = [model1,model2,model3,model4];
+	# Generating the models
+	model1 = RK(["water"])
+	model2 = PatelTeja(["water"])
+	model3 = PR(["water"];alpha=TwuAlpha)
+	model4 = PR(["water"];alpha=TwuAlpha,translation=RackettTranslation)
+
+	# Concatenating them into one list
+	models = [model1,model2,model3,model4];
 end
 
-# ╔═╡ 2533e27f-0ac2-412f-abc9-7fe13a0b8622
-md"We can then obtain the VLE envelope directly using the `bubble_pressure` function:"
+# ╔═╡ 0ffc27ac-df07-4d75-8bf7-af1da6a4ca0a
+md"""
+As we can see, all that we need to do to modify the $\alpha$-function or volume translation method is use the optional arguments `alpha` and `translation`.
 
-# ╔═╡ 858e9f15-1505-4f93-8e69-dfb621662f53
+We can now obtain the VLE envelope of water. We first need the critical point which can be obtained using `crit_pure`:
+"""
+
+# ╔═╡ fe2247ad-13c1-4255-8650-0601c85d750e
+# Obtaining all of their critical points
+crit = crit_pure.(models);
+
+# ╔═╡ 985a4646-6f7f-43bb-98cc-f908653131bc
 begin
-	T1 = 423.15
-	x_len1 = 200 # changed from 200 to 10 to save time
-	x1 = range(1e-5,1-1e-5,length=x_len1)
-	X1 = Clapeyron.FractionVector.(x1)
-	
-	y1 = []
-	p1 = []
+	# Obtaining the saturation curve
+	T = []
+	p = []
+	v_l = []
+	v_v = []
 end
 
-# ╔═╡ afc8643c-a17b-4586-a1d3-be0e66178e00
+# ╔═╡ 532085b6-967c-4e67-bddb-23aaa694cd4e
 for i ∈ 1:4
-	v0 =[]
-	bub = bubble_pressure.(models1[i],T1,X1)
-	append!(y1,[append!([bub[i][4][1] for i ∈ 1:x_len1],reverse(x1))])
-	append!(p1,[append!([bub[i][1] for i ∈ 1:x_len1],[bub[i][1] for i ∈ x_len1:-1:1])])
+    append!(T,[range(285,crit[i][1],length=300)])
+    sat = saturation_pressure.(models[i],T[i])
+    append!(p,[[sat[i][1] for i ∈ 1:300]])
+    append!(v_l,[[sat[i][2] for i ∈ 1:300]])
+    append!(v_v,[[sat[i][3] for i ∈ 1:300]])
 end
 
-# ╔═╡ ca9d0d9a-dc2a-45e3-930f-4ab3c042e760
+# ╔═╡ 3c0033aa-b65a-4d82-9854-121e0e9194c5
+md"Collecting some data from the NIST Chemistry Webbook"
+
+# ╔═╡ e6677a2e-ea0c-4458-b115-091774d84642
+begin
+	# Put this in a data file and import it into the code
+	T_exp = [300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620,640,647.096]
+
+	p_exp = [0.0035368,0.010546,0.027188,0.062194,0.12885,0.24577,0.4373,0.73367,1.1709,1.7905,2.6392,3.769,5.2369,7.1062,9.448,12.345,15.901,20.265,22.064]
+
+	ρ_l_exp = [55.315,54.919,54.371,53.698,52.918,52.038,51.064,49.994,48.824,47.545,46.145,44.603,42.889,40.956,38.725,36.048,32.577,26.729,17.873728]
+
+	ρ_v_exp = [0.0014204,0.0039778,0.0096808,0.021014,0.041537,0.076014,0.13055,0.21276,0.33209,0.50035,0.73265,1.0491,1.478,2.062,2.872,4.0434,5.9009,9.8331,17.873728];
+end
+
+# ╔═╡ 895c6a09-8818-4de6-94ea-21a4b7b46ea5
 md"Plotting:"
 
-# ╔═╡ 8a5312a6-a829-4e1c-84d2-a4fb05087ae9
+# ╔═╡ 6470370a-51a3-416f-9bb5-7eb5436b62e4
 begin
 	plot(
-		1 .-y1[1], 
-		p1[1]./1e6, 
-		label="Wilson{SRK}", 
-		linestyle=:dot, 
-		linewidth=3
+		T[1],
+		p[1] ./1e6,
+		label="RK",
+		linestyle=:dot,
+		color=:red
 	)
 	plot!(
-		1 .-y1[2], 
-		p1[2]./1e6, 
-		label="NRTL{PR}", 
-		linestyle=:dash, 
-		linewidth=3
+		T[2],
+		p[2] ./1e6,
+		label="PR",
+		linestyle=:dash,
+		color=:green
 	)
 	plot!(
-		1 .-y1[3], 
-		p1[3]./1e6, 
-		label="UNIFAC{PC-SAFT}",
-		linestyle=:dashdot, 
-		linewidth=3
+		T[3],
+		p[3] ./1e6,
+		label="PR{TwuAlpha}",
+		linestyle=:dashdot,
+		color=:blue
 	)
 	plot!(
-		1 .-y1[4],
-		p1[4]./1e6,
-		label="COSMO-SAC-dsp{SAFT-γ Mie}",
-		linestyle=:dashdotdot, 
-		linewidth=3, 
-		 
+		T[4],
+		p[4] ./1e6,
+		label="PR{TwuAlpha, RackettTranslation}",
+		linestyle=:dashdotdot
 	)
-	xlabel!("composition of 1", xguidefontsize = 16)
-	ylabel!("Pressure [MPa]", yguidefontsize = 16)
-	# Minor plot setup
-	plot!(
-		tickfontsize=12, 
-		legend_font_pointsize = 12,
-		legend_position = :bottomright,
-		framestyle = :box
-	)
-end
+	scatter!(
+		T_exp,
+		p_exp,
+		label="Experimental",
+		markershape = :hexagon,
+		markersize = 5,
+		color=:black)
 
-# ╔═╡ 7912c34a-2e54-4630-ae30-91e73999e7a4
-md"## $T-xy$ diagram of water + ethanol"
-
-# ╔═╡ 68a40150-460b-414c-ab38-df475357fff2
-md"""
-Activity models can be used in tangent with cubic equations of state within mixing rules. This can greatly improve the accuracy of either model when used in isolation. We again use the water + ethanol system as an example.
-
-We define the activity based models the same way as before; to use an activity model within a cubic equation of state, we must specify the optional arguments `mixing` for the mixing rule and `activity` for the particular activity model we're using:
-"""
-
-# ╔═╡ 70ca4d8d-d176-4838-88c3-25c06b1513a9
-begin
-	model5 = Wilson(["water","ethanol"];puremodel=PR)
-	model6 = NRTL(["water","ethanol"];puremodel=PR)
-	model7 = UNIQUAC(["water","ethanol"];puremodel=PR)
-	model8 = PR(["water","ethanol"];mixing=HVRule,activity=Wilson)
-	model9 = PR(["water","ethanol"];mixing=WSRule,activity=NRTL)
-	model10 = PR(["water","ethanol"];mixing=LCVMRule,activity=UNIQUAC)
+	ylabel!("Pressure [MPa]")
+	xlabel!("Temperature [K]")
 	
-	models2 = [model1,model2,model3,model4,model5,model6]
-end
-
-# ╔═╡ 89a66273-3aea-4440-8834-7bc927a3d46b
-md"We can then obtain the VLE envelope directly using the `bubble_temperature` function:"
-
-# ╔═╡ c1aa5f30-4d3e-46ea-9ade-1a2c426aefc6
-begin
-	x_len2 = 100 # Changed from 100 to 10
-	x2 = range(1e-5,1-1e-5,length=x_len2)
-	X2 = Clapeyron.FractionVector.(x2) 
-	T2 = []
-	y2 = [];
-end
-
-# ╔═╡ 1c6a2ab0-885e-4b1e-880f-7d911e94685d
-for j=1:6
-    A = []
-    B = []
-    for i=1:x_len2
-        bub = bubble_temperature(models2[j],1.0133e5,X2[i])
-        append!(A,bub[1])
-        append!(B,bub[4][1])
-        T0 = deepcopy(A[i])
-    end
-    append!(A,reverse(A))
-    append!(T2,[A])
-    append!(B,reverse(x2))
-    append!(y2,[B])
-end
-
-# ╔═╡ f377b440-9821-43bd-ab74-ffa8691ece66
-md"""
-The above is an example of how one can generate these figures quickly (and smoothly). We can re-use the solution from the previous iteration as an initial guess to the next iteration.
-
-Plotting:
-"""
-
-# ╔═╡ 6be5b9a7-cb3f-4029-8db8-657446ad8e6a
-begin
-	plot(
-		1 .-y2[1], 
-		T2[1], 
-		label="Wilson{PR}", 
-		linestyle=:dot, 
-		linewidth=3
-	)
-	plot!(
-		1 .-y2[2],
-		T2[2],
-		label="NRTL{PR}", 
-		linestyle=:dash, 
-		linewidth=3
-	)
-	plot!(
-		1 .-y2[3],
-		T2[3],
-		label="UNIQUAC{PR}", 
-		linestyle=:dashdot, 
-		linewidth=3
-	)
-	plot!(
-		1 .-y2[4],
-		T2[4],
-		label="PR{HVRule{Wilson}}",
-		linestyle=:dashdotdot, 
-		linewidth=3
-	)
-	plot!(
-		1 .-y2[5],
-		T2[5],
-		label="PR{WSRule{NRTL}}",
-		linestyle=:dot, 
-		linewidth=3, 
-	)
-	plot!(
-		1 .-y2[6],
-		T2[6],
-		label="PR{LCVMRule{UNIQUAC}}",
-		linestyle=:dash, 
-		linewidth=3, 
-	)
-	xlabel!("composition of 1")
-	ylabel!("Temperature [K]")
 	# Minor plot setup
+	
 	plot!(
 		tickfontsize=12, 
 		legend_font_pointsize = 12,
-		legend_position = :topright,
+		yscale=:log,
+		legend_position = :bottomright,
+		minorticks = .1,
 		framestyle = :box,
 		xguidefontsize = 16, 
-		yguidefontsize = 16
+		yguidefontsize = 16,
+		xlims = [300,650],
+		ylims = [5e-3,3e1]
 	)
-	yscale!(:log)
+	
+	# Create a legend of all the existing plots using their labels as names
+	#plt.legend(loc="lower right",frameon=false,fontsize=12) 
+	#plt.xlabel("Temperature / K",fontsize=16)
+	#plt.ylabel("Pressure / MPa",fontsize=16)
+	#plt.xticks(fontsize=12)
+	#plt.yticks(fontsize=12)
+	#plt.xlim([300,650])
+	#plt.ylim([5e-3,3e1])
 end
-
-# ╔═╡ d1c41e92-b422-4c49-ab37-fa92d4b9a1d0
-md"""
-As we can see above, in most cases, the activity model out-performs the implementation within a mixing rule. However, interestingly enough, if the activity model performs quite poorly alone, implementing it within a mixing rule can greatly improve the predictions, as is the case with UNIQUAC.
-"""
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1660,24 +1590,18 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
-# ╠═b9fb451e-cd38-11ee-2d44-e5029c31e244
-# ╠═929c118b-113b-4fd2-a998-fc54acf70318
-# ╟─5c1f7cf7-ad5c-4da1-8528-fe5fe93cd2b0
-# ╟─4b4e4880-b895-44b6-8bb3-1b5cf9a08b77
-# ╠═ec86a5f3-1109-4749-9e1b-575509e0def7
-# ╟─2533e27f-0ac2-412f-abc9-7fe13a0b8622
-# ╠═858e9f15-1505-4f93-8e69-dfb621662f53
-# ╠═afc8643c-a17b-4586-a1d3-be0e66178e00
-# ╟─ca9d0d9a-dc2a-45e3-930f-4ab3c042e760
-# ╠═8a5312a6-a829-4e1c-84d2-a4fb05087ae9
-# ╟─7912c34a-2e54-4630-ae30-91e73999e7a4
-# ╟─68a40150-460b-414c-ab38-df475357fff2
-# ╠═70ca4d8d-d176-4838-88c3-25c06b1513a9
-# ╟─89a66273-3aea-4440-8834-7bc927a3d46b
-# ╠═c1aa5f30-4d3e-46ea-9ade-1a2c426aefc6
-# ╠═1c6a2ab0-885e-4b1e-880f-7d911e94685d
-# ╟─f377b440-9821-43bd-ab74-ffa8691ece66
-# ╠═6be5b9a7-cb3f-4029-8db8-657446ad8e6a
-# ╟─d1c41e92-b422-4c49-ab37-fa92d4b9a1d0
+# ╠═eeb2e4c8-ce97-11ee-3cee-15f4e3f6d5e8
+# ╠═6d1c9b51-c8d0-427b-ac8d-fc5576faf206
+# ╟─2de388f8-8b36-450a-9496-bd0be910b793
+# ╠═b78c14dd-5123-432b-bac0-19fc412ec67b
+# ╠═12ff507f-73c6-4218-bb11-7b78964051c6
+# ╟─0ffc27ac-df07-4d75-8bf7-af1da6a4ca0a
+# ╠═fe2247ad-13c1-4255-8650-0601c85d750e
+# ╠═985a4646-6f7f-43bb-98cc-f908653131bc
+# ╠═532085b6-967c-4e67-bddb-23aaa694cd4e
+# ╟─3c0033aa-b65a-4d82-9854-121e0e9194c5
+# ╠═e6677a2e-ea0c-4458-b115-091774d84642
+# ╟─895c6a09-8818-4de6-94ea-21a4b7b46ea5
+# ╠═6470370a-51a3-416f-9bb5-7eb5436b62e4
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
