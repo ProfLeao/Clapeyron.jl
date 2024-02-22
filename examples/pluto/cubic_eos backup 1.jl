@@ -4,11 +4,8 @@
 using Markdown
 using InteractiveUtils
 
-# ╔═╡ 8cd21e2e-21fe-476f-875d-864426d46b09
-using Plots
-
-# ╔═╡ 4002ca82-87f9-4dec-8ede-9fa7834f91a0
-using Clapeyron
+# ╔═╡ 6d1c9b51-c8d0-427b-ac8d-fc5576faf206
+using Plots, Clapeyron
 
 # ╔═╡ eeb2e4c8-ce97-11ee-3cee-15f4e3f6d5e8
 md"# Cubic equations of state"
@@ -35,7 +32,7 @@ begin
 	model2 = PatelTeja(["water"])
 	model3 = PR(["water"];alpha=TwuAlpha)
 	model4 = PR(["water"];alpha=TwuAlpha,translation=RackettTranslation)
-	
+
 	# Concatenating them into one list
 	models = [model1,model2,model3,model4];
 end
@@ -54,20 +51,19 @@ crit = crit_pure.(models);
 # ╔═╡ 985a4646-6f7f-43bb-98cc-f908653131bc
 begin
 	# Obtaining the saturation curve
-	N = 300
-	T = zeros(N,4)
-	p = zeros(N,4)
-	v_l = zeros(N,4)
-	v_v = zeros(N,4)
+	T = []
+	p = []
+	v_l = []
+	v_v = []
 end
 
 # ╔═╡ 532085b6-967c-4e67-bddb-23aaa694cd4e
 for i ∈ 1:4
-    T[:,i] = range(285,crit[i][1],length=N)
-    sat = saturation_pressure.(models[i],T[:,i])
-    p[:,i] = [sat[i][1] for i ∈ 1:N]
-    v_l[:,i] = [sat[i][2] for i ∈ 1:N]
-    v_v[:,i] = [sat[i][3] for i ∈ 1:N]
+    append!(T,[range(285,crit[i][1],length=300)])
+    sat = saturation_pressure.(models[i],T[i])
+    append!(p,[[sat[i][1] for i ∈ 1:300]])
+    append!(v_l,[[sat[i][2] for i ∈ 1:300]])
+    append!(v_v,[[sat[i][3] for i ∈ 1:300]])
 end
 
 # ╔═╡ 3c0033aa-b65a-4d82-9854-121e0e9194c5
@@ -77,11 +73,11 @@ md"Collecting some data from the NIST Chemistry Webbook"
 begin
 	# Put this in a data file and import it into the code
 	T_exp = [300,320,340,360,380,400,420,440,460,480,500,520,540,560,580,600,620,640,647.096]
-	
+
 	p_exp = [0.0035368,0.010546,0.027188,0.062194,0.12885,0.24577,0.4373,0.73367,1.1709,1.7905,2.6392,3.769,5.2369,7.1062,9.448,12.345,15.901,20.265,22.064]
-	
+
 	ρ_l_exp = [55.315,54.919,54.371,53.698,52.918,52.038,51.064,49.994,48.824,47.545,46.145,44.603,42.889,40.956,38.725,36.048,32.577,26.729,17.873728]
-	
+
 	ρ_v_exp = [0.0014204,0.0039778,0.0096808,0.021014,0.041537,0.076014,0.13055,0.21276,0.33209,0.50035,0.73265,1.0491,1.478,2.062,2.872,4.0434,5.9009,9.8331,17.873728];
 end
 
@@ -91,29 +87,29 @@ md"Plotting:"
 # ╔═╡ 6470370a-51a3-416f-9bb5-7eb5436b62e4
 begin
 	plot(
-		T[:,1],
-		p[:,1] ./1e6,
+		T[1],
+		p[1] ./1e6,
 		label="RK",
 		linestyle=:dot,
 		color=:red
 	)
 	plot!(
-		T[:,2],
-		p[:,2] ./1e6,
+		T[2],
+		p[2] ./1e6,
 		label="PR",
 		linestyle=:dash,
 		color=:green
 	)
 	plot!(
-		T[:,3],
-		p[:,3] ./1e6,
+		T[3],
+		p[3] ./1e6,
 		label="PR{TwuAlpha}",
 		linestyle=:dashdot,
 		color=:blue
 	)
 	plot!(
-		T[:,4],
-		p[:,4] ./1e6,
+		T[4],
+		p[4] ./1e6,
 		label="PR{TwuAlpha, RackettTranslation}",
 		linestyle=:dashdotdot
 	)
@@ -204,21 +200,6 @@ begin
 		ylims = [5e-3,3e1]
 	)
 end
-
-# ╔═╡ 45a256e4-6411-4974-8c0a-93b731b904a2
-xis = collect(-5:.1:5)
-
-# ╔═╡ 6a4424b0-9705-4213-99e2-fec49ec0e2d0
-y = xis .^ 2
-
-# ╔═╡ 8029dbd9-fc95-4898-940b-e3546b621419
-plot(xis, y)
-
-# ╔═╡ 872e47e5-5948-48cb-b181-cf3e56b3a277
-
-
-# ╔═╡ f4dae9f2-e2bf-4920-bbd5-737447d8c94f
-
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -314,9 +295,9 @@ version = "0.5.1"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra"]
-git-tree-sha1 = "892b245fdec1c511906671b6a5e1bafa38a727c1"
+git-tree-sha1 = "ad25e7d21ce10e01de973cdc68ad0f850a953c52"
 uuid = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-version = "1.22.0"
+version = "1.21.1"
 weakdeps = ["SparseArrays"]
 
     [deps.ChainRulesCore.extensions]
@@ -391,9 +372,9 @@ version = "0.3.0"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]
-git-tree-sha1 = "d2c021fbdde94f6cdaa799639adfeeaa17fd67f5"
+git-tree-sha1 = "75bd5b6fc5089df449b5d35fa501c846c9b6549b"
 uuid = "34da2185-b29b-5c13-b0c7-acf172513d20"
-version = "4.13.0"
+version = "4.12.0"
 weakdeps = ["Dates", "LinearAlgebra"]
 
     [deps.Compat.extensions]
@@ -445,9 +426,9 @@ version = "1.16.0"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]
-git-tree-sha1 = "1fb174f0d48fe7d142e1109a10636bc1d14f5ac2"
+git-tree-sha1 = "ac67408d9ddf207de5cfa9a97e114352430f01ed"
 uuid = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
-version = "0.18.17"
+version = "0.18.16"
 
 [[deps.DataValueInterfaces]]
 git-tree-sha1 = "bfc1187b79289637fa0ef6d4436ebdfe6905cbd6"
@@ -1220,9 +1201,9 @@ weakdeps = ["ChainRulesCore"]
 
 [[deps.StaticArrays]]
 deps = ["LinearAlgebra", "PrecompileTools", "Random", "StaticArraysCore"]
-git-tree-sha1 = "bf074c045d3d5ffd956fa0a461da38a44685d6b2"
+git-tree-sha1 = "7b0e9c14c624e435076d19aea1e5cbdec2b9ca37"
 uuid = "90137ffa-7385-5640-81b9-e52037218182"
-version = "1.9.3"
+version = "1.9.2"
 weakdeps = ["ChainRulesCore", "Statistics"]
 
     [deps.StaticArrays.extensions]
@@ -1401,9 +1382,9 @@ version = "1.1.34+0"
 
 [[deps.XZ_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "ac88fb95ae6447c8dda6a5503f3bafd496ae8632"
+git-tree-sha1 = "522b8414d40c4cbbab8dee346ac3a09f9768f25d"
 uuid = "ffd25f8a-64ca-5728-b0f7-c24cf3aae800"
-version = "5.4.6+0"
+version = "5.4.5+0"
 
 [[deps.Xorg_libICE_jll]]
 deps = ["Libdl", "Pkg"]
@@ -1662,8 +1643,7 @@ version = "1.4.1+1"
 
 # ╔═╡ Cell order:
 # ╠═eeb2e4c8-ce97-11ee-3cee-15f4e3f6d5e8
-# ╠═8cd21e2e-21fe-476f-875d-864426d46b09
-# ╠═4002ca82-87f9-4dec-8ede-9fa7834f91a0
+# ╠═6d1c9b51-c8d0-427b-ac8d-fc5576faf206
 # ╟─2de388f8-8b36-450a-9496-bd0be910b793
 # ╠═b78c14dd-5123-432b-bac0-19fc412ec67b
 # ╠═12ff507f-73c6-4218-bb11-7b78964051c6
@@ -1677,10 +1657,5 @@ version = "1.4.1+1"
 # ╠═6470370a-51a3-416f-9bb5-7eb5436b62e4
 # ╟─37a67e54-003d-488a-8497-ea280cd15c3a
 # ╠═4fd41fd0-55fd-4532-b239-b8902893070c
-# ╠═45a256e4-6411-4974-8c0a-93b731b904a2
-# ╠═6a4424b0-9705-4213-99e2-fec49ec0e2d0
-# ╠═8029dbd9-fc95-4898-940b-e3546b621419
-# ╠═872e47e5-5948-48cb-b181-cf3e56b3a277
-# ╠═f4dae9f2-e2bf-4920-bbd5-737447d8c94f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
